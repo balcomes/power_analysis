@@ -1,0 +1,888 @@
+---
+title: "Power and Sample Size Determination"
+author: "Shawn Balcome"
+date: "July 22, 2015"
+output: slidy_presentation
+runtime: shiny
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+```{r, echo=FALSE}
+library("knitr")
+library("xtable")
+library("pander")
+```
+
+## Slides
+These slides are hosted at:
+
+https://balcomes.shinyapps.io/power_analysis
+
+The source is available at:
+
+
+
+## Review
+- Null Hypothesis:  No relationship between, default assumption
+
+- Type 1 Error:  False Positive, falsely reject true $H_0$
+
+- Type 2 Error:  False Negative, fail to reject false $H_0$
+
+----
+```{r, results="asis", echo=FALSE}
+m <- matrix(c("Type I error", "Correct decision", "Correct decision", "Type II error"),byrow=TRUE,nrow=2)
+colnames(m) <- c("$H_0$ is True", "$H_0$ is False")
+rownames(m) <- c("Reject $H_0$", "Do not Reject $H_0$")
+#kable(as.data.frame(m), format = "markdown")
+pandoc.table(as.data.frame(m), format = "rmarkdown")
+```
+
+## Cohen
+- significance criterion (a)
+- the sample size (N)
+- population effect size (ES)
+
+## Need to consider
+- Significance Level = P(Type I error) = probability of finding an effect that is not there
+- Power = 1 - P(Type II error) = probability of finding an effect that is there
+Power: Probability that H0 will be rejected when it is false
+- Effect Size
+- Sample Size
+
+## Effect Size
+$d=\frac{M_{group1}-M_{group2}}{SD_{pooled}}$
+
+$SD_{pooled} = \sqrt{\frac{SD^2_{group1}+SD^2_{group2}}{2}}$
+
+## Another
+- Confidence Level
+- Confidence Interval
+- Population
+- Sample Size
+
+##R
+Programming language useful for Statistics and Plotting
+
+Has a number of packages/libraries catering to many different fields 
+
+Excellent IDE for R
+RStudio:  https://www.rstudio.com/
+
+##pwd
+```{r, eval=FALSE, echo=TRUE}
+install.packages("pwr")
+library("pwr")
+```
+
+##pwd Table {.smaller}
+```{r, results="asis", echo=FALSE}
+df <- as.data.frame(matrix(c("pwr.2p.test", "two proportions (equal n)", "pwr.2p2n.test", "two proportions (unequal n)", "pwr.anova.test", "balanced one way ANOVA", "pwr.chisq.test",	"chi-square test", "pwr.f2.test",	"general linear model", "pwr.p.test", "proportion (one sample)", "pwr.r.test",	"correlation", "pwr.t.test",	"t-tests (one sample, 2 sample, paired)", "pwr.t2n.test",	"t-test (two samples with unequal n)"),byrow=TRUE,nrow=9))
+names(df) <- c("function",	"power calculations for")
+pandoc.table((df), format = "rmarkdown")
+```
+
+## Alternative R Packages
+- base
+- TrialSize:  http://cran.r-project.org/web/packages/TrialSize/index.html
+
+## pwr Demo
+```{r, results="asis", echo=TRUE}
+library(pwr)
+```
+For a one-way ANOVA comparing 5 groups, calculate the sample size needed in each group to obtain a power of 0.80, when the effect size is moderate (0.25) and a significance level of 0.05 is employed.
+```{r, results="asis", echo=TRUE}
+pwr.anova.test(k=5,f=.25,sig.level=.05,power=.8)
+```
+
+## pwr Demo Continued
+What is the power of a one-tailed t-test, with a significance level of 0.01, 25 people in each group, and an effect size equal to 0.75?
+```{r, results="asis", echo=TRUE}
+pwr.t.test(n=25,d=0.75,sig.level=.01,alternative="greater")
+```
+
+## pwr Demo Continued
+Using a two-tailed test proportions, and assuming a significance level of 0.01 and a common sample size of 30 for each proportion, what effect size can be detected with a power of .75? 
+```{r, results="asis", echo=TRUE}
+pwr.2p.test(n=30,sig.level=0.01,power=0.75)
+```
+
+##References {.smaller}
+J. Cohen, Statistical Power Analysis for the Behavioral Sciences, 2nd ed. (Erlbaum, Hillsdale, NJ, 1988).
+
+## {.smaller}
+```{r, echo = FALSE}
+selectInput("pwr_test",
+             "Power calculation for:",
+             choices = c("two proportions (same sample sizes)" = "pwr.2p.test",
+                         "two proportions (different sample sizes)" = "pwr.2p2n.test",
+                         "balanced one-way analysis of variance tests" = "pwr.anova.test",
+                         "chi-squared tests" = "pwr.chisq.test",
+                         "the general linear model" = "pwr.f2.test",
+                         "the mean of a normal distribution (known variance)" = "pwr.norm.test",
+                         "proportion tests (one sample)" = "pwr.p.test",
+                         "correlation test" = "pwr.r.test",
+                         "t-tests of means (one sample, two samples and paired samples)" = "pwr.t.test",
+                         "two samples (different sizes) t-tests of means" = "pwr.t2n.test"))
+
+################################################################################
+# Power calculation for two proportions (same sample sizes) ####################
+################################################################################
+conditionalPanel(condition = "input.pwr_test == 'pwr.2p.test'",
+  sidebarPanel(
+    radioButtons("missing", "Looking to determine:",
+                 choices = c("h", "n", "sig.level", "power"),
+                 inline = TRUE),
+    radioButtons("alternative", "Alternative Hypothesis:",
+                 choices = c("two.sided", "greater", "less"),
+                 inline = TRUE),
+    conditionalPanel(
+      condition = "input.missing != 'h'",
+      sliderInput("h",
+                  "Effect Size (h)",
+                  0,1,0.8)
+    ),
+    conditionalPanel(
+      condition = "input.missing != 'n'",
+      sliderInput("n",
+                  "Number of observations (n)",
+                  1,10000,100)
+    ),
+    conditionalPanel(
+      condition = "input.missing != 'sig.level'",
+      sliderInput("sig.level",
+                  "Significance level (Type I error probability)",
+                  0,1,0.05)
+    ),
+    conditionalPanel(
+      condition = "input.missing != 'power'",
+      sliderInput("power",
+                  "Power of test (1 minus Type II error probability)",
+                  0,1,0.9)
+    )
+  ),
+        
+  renderTable(
+    if(length(input$missing)!=0){
+      h <- input$h
+      n <- input$n
+      sig.level <- input$sig.level
+      power <- input$power
+      alternative <- input$alternative
+      if(input$missing == 'h'){
+        h <- NULL
+      }
+      if(input$missing == 'n'){
+        n <- NULL
+      }
+      if(input$missing == 'sig.level'){
+        sig.level <- NULL
+      }
+      if(input$missing == 'power'){
+        power <- NULL
+      }
+      Result <- as.data.frame(unlist(pwr.2p.test(h,
+                                                 n,
+                                                 sig.level,
+                                                 power,
+                                                 alternative)))
+      names(Result) <- "Result"
+      Result
+    }
+  )
+)
+
+################################################################################
+# Power calculation for two proportions (different sample sizes) ###############
+################################################################################
+conditionalPanel(condition = "input.pwr_test == 'pwr.2p2n.test'",
+  sidebarPanel(
+    radioButtons("missing_2p2n", "Looking to determine:",
+                 choices = c("h", "n1", "n2", "sig.level", "power"),
+                 inline = TRUE),
+    radioButtons("alternative_2p2n", "Alternative Hypothesis:",
+                 choices = c("two.sided", "greater", "less"),
+                 inline = TRUE),
+    conditionalPanel(
+      condition = "input.missing_2p2n != 'h'",
+      sliderInput("h_2p2n",
+                  "Effect Size (h)",
+                  0,1,0.8)
+    ),
+    conditionalPanel(
+      condition = "input.missing_2p2n != 'n1'",
+      sliderInput("n1_2p2n",
+                  "Number of observations (n1)",
+                  1,10000,100)
+    ),
+    conditionalPanel(
+      condition = "input.missing_2p2n != 'n2'",
+      sliderInput("n2_2p2n",
+                  "Number of observations (n2)",
+                  1,10000,100)
+    ),
+    conditionalPanel(
+      condition = "input.missing_2p2n != 'sig.level'",
+      sliderInput("sig.level_2p2n",
+                  "Significance level (Type I error probability)",
+                  0,1,0.05)
+    ),
+    conditionalPanel(
+      condition = "input.missing_2p2n != 'power'",
+      sliderInput("power_2p2n",
+                  "Power of test (1 minus Type II error probability)",
+                  0,1,0.9)
+    )
+  ),
+        
+  renderTable(
+    if(length(input$missing_2p2n)!=0){
+      h_2p2n <- input$h_2p2n
+      n1_2p2n <- input$n1_2p2n
+      n2_2p2n <- input$n2_2p2n
+      sig.level_2p2n <- input$sig.level_2p2n
+      power_2p2n <- input$power_2p2n
+      alternative_2p2n <- input$alternative_2p2n
+      if(input$missing_2p2n == 'h'){
+        h_2p2n <- NULL
+      }
+      if(input$missing_2p2n == 'n1'){
+        n1_2p2n <- NULL
+      }
+      if(input$missing_2p2n == 'n2'){
+        n2_2p2n <- NULL
+      }
+      if(input$missing_2p2n == 'sig.level'){
+        sig.level_2p2n <- NULL
+      }
+      if(input$missing_2p2n == 'power'){
+        power_2p2n <- NULL
+      }
+      Result_2p2n <- as.data.frame(unlist(pwr.2p2n.test(h_2p2n,
+                                                        n1_2p2n,
+                                                        n2_2p2n,
+                                                        sig.level_2p2n,
+                                                        power_2p2n,
+                                                        alternative_2p2n)))
+      names(Result_2p2n) <- "Result"
+      Result_2p2n
+    }
+  )
+)
+
+################################################################################
+# Balanced one-way analysis of variance tests ##################################
+################################################################################
+conditionalPanel(condition = "input.pwr_test == 'pwr.anova.test'",
+  sidebarPanel(
+    radioButtons("missing_anova", "Looking to determine:",
+                 choices = c("k", "n", "f", "sig.level", "power"),
+                 inline = TRUE),
+    conditionalPanel(
+      condition = "input.missing_anova != 'k'",
+      sliderInput("k_anova",
+                  "Number of groups (k)",
+                  1,100,3)
+    ),
+    conditionalPanel(
+      condition = "input.missing_anova != 'n'",
+      sliderInput("n_anova",
+                  "Number of observations (per group) (n)",
+                  1,10000,100)
+    ),
+    conditionalPanel(
+      condition = "input.missing_anova != 'f'",
+      sliderInput("f_anova",
+                  "Effect size (f)",
+                  0,1,0.80)
+    ),
+    conditionalPanel(
+      condition = "input.missing_anova != 'sig.level'",
+      sliderInput("sig.level_anova",
+                  "Significance level (Type I error probability)",
+                  0,1,0.05)
+    ),
+    conditionalPanel(
+      condition = "input.missing_anova != 'power'",
+      sliderInput("power_anova",
+                  "Power of test (1 minus Type II error probability)",
+                  0,1,0.9)
+    )
+  ),
+        
+  renderTable(
+    if(length(input$missing_anova)!=0){
+      k_anova <- input$k_anova
+      n_anova <- input$n_anova
+      f_anova <- input$f_anova
+      sig.level_anova <- input$sig.level_anova
+      power_anova <- input$power_anova
+      if(input$missing_anova == 'k'){
+        k_anova <- NULL
+      }
+      if(input$missing_anova == 'n'){
+        n_anova <- NULL
+      }
+      if(input$missing_anova == 'f'){
+        f_anova <- NULL
+      }
+      if(input$missing_anova == 'sig.level'){
+        sig.level_anova <- NULL
+      }
+      if(input$missing_anova == 'power'){
+        power_anova <- NULL
+      }
+      Result_anova <- as.data.frame(unlist(pwr.anova.test(k_anova,
+                                                        n_anova,
+                                                        f_anova,
+                                                        sig.level_anova,
+                                                        power_anova)))
+      names(Result_anova) <- "Result"
+      Result_anova
+    }
+  )
+)
+
+################################################################################
+# chi-squared tests ############################################################
+################################################################################
+conditionalPanel(condition = "input.pwr_test == 'pwr.chisq.test'",
+  sidebarPanel(
+    radioButtons("missing_chisq", "Looking to determine:",
+                 choices = c("w", "N", "df", "sig.level", "power"),
+                 inline = TRUE),
+    conditionalPanel(
+      condition = "input.missing_chisq != 'w'",
+      sliderInput("w_chisq",
+                  "Effect size (w)",
+                  0,1,0.80)
+    ),
+    conditionalPanel(
+      condition = "input.missing_chisq != 'N'",
+      sliderInput("N_chisq",
+                  "Total number of observations (N)",
+                  1,10000,100)
+    ),
+    conditionalPanel(
+      condition = "input.missing_chisq != 'df'",
+      sliderInput("df_chisq",
+                  "Degree of freedom (df) (depends on the chosen test)",
+                  0,100,6)
+    ),
+    conditionalPanel(
+      condition = "input.missing_chisq != 'sig.level'",
+      sliderInput("sig.level_chisq",
+                  "Significance level (Type I error probability)",
+                  0,1,0.05)
+    ),
+    conditionalPanel(
+      condition = "input.missing_chisq != 'power'",
+      sliderInput("power_chisq",
+                  "Power of test (1 minus Type II error probability)",
+                  0,1,0.9)
+    )
+  ),
+        
+  renderTable(
+    if(length(input$missing_chisq)!=0){
+      w_chisq <- input$w_chisq
+      N_chisq <- input$N_chisq
+      df_chisq <- input$df_chisq
+      sig.level_chisq <- input$sig.level_chisq
+      power_chisq <- input$power_chisq
+      if(input$missing_chisq == 'w'){
+        w_chisq <- NULL
+      }
+      if(input$missing_chisq == 'N'){
+        N_chisq <- NULL
+      }
+      if(input$missing_chisq == 'df'){
+        df_chisq <- NULL
+      }
+      if(input$missing_chisq == 'sig.level'){
+        sig.level_chisq <- NULL
+      }
+      if(input$missing_chisq == 'power'){
+        power_chisq <- NULL
+      }
+      Result_chisq <- as.data.frame(unlist(pwr.chisq.test(w_chisq,
+                                                        N_chisq,
+                                                        df_chisq,
+                                                        sig.level_chisq,
+                                                        power_chisq)))
+      names(Result_chisq) <- "Result"
+      Result_chisq
+    }
+  )
+)
+
+################################################################################
+# The general linear model #####################################################
+################################################################################
+conditionalPanel(condition = "input.pwr_test == 'pwr.f2.test'",
+  sidebarPanel(
+    radioButtons("missing_f2", "Looking to determine:",
+                 choices = c("u", "v", "f2", "sig.level", "power"),
+                 inline = TRUE),
+    conditionalPanel(
+      condition = "input.missing_f2 != 'u'",
+      sliderInput("u_f2",
+                  "Degrees of freedom for numerator (u)",
+                  0,100,6)
+    ),
+    conditionalPanel(
+      condition = "input.missing_f2 != 'v'",
+      sliderInput("v_f2",
+                  "Degrees of freedom for denominator (v)",
+                  0,100,6)
+    ),
+    conditionalPanel(
+      condition = "input.missing_f2 != 'f2'",
+      sliderInput("f2_f2",
+                  "Effect size (f2)",
+                  0,1,0.80)
+    ),
+    conditionalPanel(
+      condition = "input.missing_f2 != 'sig.level'",
+      sliderInput("sig.level_f2",
+                  "Significance level (Type I error probability)",
+                  0,1,0.05)
+    ),
+    conditionalPanel(
+      condition = "input.missing_f2 != 'power'",
+      sliderInput("power_f2",
+                  "Power of test (1 minus Type II error probability)",
+                  0,1,0.9)
+    )
+  ),
+        
+  renderTable(
+    if(length(input$missing_f2)!=0){
+      u_f2 <- input$u_f2
+      v_f2 <- input$v_f2
+      f2_f2 <- input$f2_f2
+      sig.level_f2 <- input$sig.level_f2
+      power_f2 <- input$power_f2
+      if(input$missing_f2 == 'u'){
+        u_f2 <- NULL
+      }
+      if(input$missing_f2 == 'v'){
+        v_f2 <- NULL
+      }
+      if(input$missing_f2 == 'f2'){
+        f2_f2 <- NULL
+      }
+      if(input$missing_f2 == 'sig.level'){
+        sig.level_f2 <- NULL
+      }
+      if(input$missing_f2 == 'power'){
+        power_f2 <- NULL
+      }
+      Result_f2 <- as.data.frame(unlist(pwr.f2.test(u_f2,
+                                                    v_f2,
+                                                    f2_f2,
+                                                    sig.level_f2,
+                                                    power_f2)))
+      names(Result_f2) <- "Result"
+      Result_f2
+    }
+  )
+)
+
+################################################################################
+# the mean of a normal distribution (known variance) ###########################
+################################################################################
+conditionalPanel(condition = "input.pwr_test == 'pwr.norm.test'",
+  sidebarPanel(
+    radioButtons("missing_norm", "Looking to determine:",
+                 choices = c("d", "n", "sig.level", "power"),
+                 inline = TRUE),
+    radioButtons("alternative_norm", "Alternative Hypothesis:",
+                 choices = c("two.sided", "greater", "less"),
+                 inline = TRUE),
+    conditionalPanel(
+      condition = "input.missing_norm != 'd'",
+      sliderInput("d_norm",
+                  "Effect Size d=mu-mu0 (d)",
+                  0,1,0.8)
+    ),
+    conditionalPanel(
+      condition = "input.missing_norm != 'n'",
+      sliderInput("n_norm",
+                  "Number of observations (n)",
+                  1,10000,100)
+    ),
+    conditionalPanel(
+      condition = "input.missing_norm != 'sig.level'",
+      sliderInput("sig.level_norm",
+                  "Significance level (Type I error probability)",
+                  0,1,0.05)
+    ),
+    conditionalPanel(
+      condition = "input.missing_norm != 'power'",
+      sliderInput("power_norm",
+                  "Power of test (1 minus Type II error probability)",
+                  0,1,0.9)
+    )
+  ),
+        
+  renderTable(
+    if(length(input$missing_norm)!=0){
+      d_norm <- input$d_norm
+      n_norm <- input$n_norm
+      sig.level_norm <- input$sig.level_norm
+      power_norm <- input$power_norm
+      alternative_norm <- input$alternative_norm
+      if(input$missing_norm == 'd'){
+        d_norm <- NULL
+      }
+      if(input$missing_norm == 'n'){
+        n_norm <- NULL
+      }
+      if(input$missing_norm == 'sig.level'){
+        sig.level_norm <- NULL
+      }
+      if(input$missing_norm == 'power'){
+        power_norm <- NULL
+      }
+      Result_norm <- as.data.frame(unlist(pwr.norm.test(d_norm,
+                                                        n_norm,
+                                                        sig.level_norm,
+                                                        power_norm,
+                                                        alternative_norm)))
+      names(Result_norm) <- "Result"
+      Result_norm
+    }
+  )
+)
+
+################################################################################
+# Proportion tests (one sample) ################################################
+################################################################################
+conditionalPanel(condition = "input.pwr_test == 'pwr.p.test'",
+  sidebarPanel(
+    radioButtons("missing_p", "Looking to determine:",
+                 choices = c("h", "n", "sig.level", "power"),
+                 inline = TRUE),
+    radioButtons("alternative_p", "Alternative Hypothesis:",
+                 choices = c("two.sided", "greater", "less"),
+                 inline = TRUE),
+    conditionalPanel(
+      condition = "input.missing_p != 'h'",
+      sliderInput("h_p",
+                  "Effect Size (h)",
+                  0,1,0.8)
+    ),
+    conditionalPanel(
+      condition = "input.missing_p != 'n'",
+      sliderInput("n_p",
+                  "Number of observations (n)",
+                  1,10000,100)
+    ),
+    conditionalPanel(
+      condition = "input.missing_p != 'sig.level'",
+      sliderInput("sig.level_p",
+                  "Significance level (Type I error probability)",
+                  0,1,0.05)
+    ),
+    conditionalPanel(
+      condition = "input.missing_p != 'power'",
+      sliderInput("power_p",
+                  "Power of test (1 minus Type II error probability)",
+                  0,1,0.9)
+    )
+  ),
+        
+  renderTable(
+    if(length(input$missing_p)!=0){
+      h_p <- input$h_p
+      n_p <- input$n_p
+      sig.level_p <- input$sig.level_p
+      power_p <- input$power_p
+      alternative_p <- input$alternative_p
+      if(input$missing_p == 'h'){
+        h_p <- NULL
+      }
+      if(input$missing_p == 'n'){
+        n_p <- NULL
+      }
+      if(input$missing_p == 'sig.level'){
+        sig.level_p <- NULL
+      }
+      if(input$missing_p == 'power'){
+        power_p <- NULL
+      }
+      Result_p <- as.data.frame(unlist(pwr.p.test(h_p,
+                                                        n_p,
+                                                        sig.level_p,
+                                                        power_p,
+                                                        alternative_p)))
+      names(Result_p) <- "Result"
+      Result_p
+    }
+  )
+)
+
+################################################################################
+# Correlation test #############################################################
+################################################################################
+conditionalPanel(condition = "input.pwr_test == 'pwr.r.test'",
+  sidebarPanel(
+    radioButtons("missing_r", "Looking to determine:",
+                 choices = c("n", "r", "sig.level", "power"),
+                 inline = TRUE),
+    radioButtons("alternative_r", "Alternative Hypothesis:",
+                 choices = c("two.sided", "greater", "less"),
+                 inline = TRUE),
+    conditionalPanel(
+      condition = "input.missing_r != 'n'",
+      sliderInput("n_r",
+                  "Number of observations (n)",
+                  1,10000,100)
+    ),
+    conditionalPanel(
+      condition = "input.missing_r != 'r'",
+      sliderInput("r_r",
+                  "Linear correlation coefficient (r)",
+                  0,1,0.5)
+    ),
+    conditionalPanel(
+      condition = "input.missing_r != 'sig.level'",
+      sliderInput("sig.level_r",
+                  "Significance level (Type I error probability)",
+                  0,1,0.05)
+    ),
+    conditionalPanel(
+      condition = "input.missing_r != 'power'",
+      sliderInput("power_r",
+                  "Power of test (1 minus Type II error probability)",
+                  0,1,0.9)
+    )
+  ),
+        
+  renderTable(
+    if(length(input$missing_r)!=0){
+      n_r <- input$n_r
+      r_r <- input$r_r
+      sig.level_r <- input$sig.level_r
+      power_r <- input$power_r
+      alternative_r <- input$alternative_r
+      if(input$missing_r == 'n'){
+        n_r <- NULL
+      }
+      if(input$missing_r == 'r'){
+        r_r <- NULL
+      }
+      if(input$missing_r == 'sig.level'){
+        sig.level_r <- NULL
+      }
+      if(input$missing_r == 'power'){
+        power_r <- NULL
+      }
+      Result_r <- as.data.frame(unlist(pwr.r.test(n_r,
+                                                        r_r,
+                                                        sig.level_r,
+                                                        power_r,
+                                                        alternative_r)))
+      names(Result_r) <- "Result"
+      Result_r
+    }
+  )
+)
+
+################################################################################
+# t-tests of means (one sample, two samples and paired samples) ################
+################################################################################
+conditionalPanel(condition = "input.pwr_test == 'pwr.t.test'",
+  sidebarPanel(
+    radioButtons("missing_t", "Looking to determine:",
+                 choices = c("n", "d", "sig.level", "power"),
+                 inline = TRUE),
+    radioButtons("type_t", "Type of t test:",
+                 choices = c("two.sample", "one.sample", "paired"),
+                 inline = TRUE),
+    radioButtons("alternative_t", "Alternative Hypothesis:",
+                 choices = c("two.sided", "greater", "less"),
+                 inline = TRUE),
+    conditionalPanel(
+      condition = "input.missing_t != 'n'",
+      sliderInput("n_t",
+                  "Number of observations (per sample) (n)",
+                  1,10000,100)
+    ),
+    conditionalPanel(
+      condition = "input.missing_t != 'd'",
+      sliderInput("d_t",
+                  "Effect size (d)",
+                  0,1,0.8)
+    ),
+    conditionalPanel(
+      condition = "input.missing_t != 'sig.level'",
+      sliderInput("sig.level_t",
+                  "Significance level (Type I error probability)",
+                  0,1,0.05)
+    ),
+    conditionalPanel(
+      condition = "input.missing_t != 'power'",
+      sliderInput("power_t",
+                  "Power of test (1 minus Type II error probability)",
+                  0,1,0.9)
+    )
+  ),
+        
+  renderTable(
+    if(length(input$missing_t)!=0){
+      n_t <- input$n_t
+      d_t <- input$d_t
+      sig.level_t <- input$sig.level_t
+      power_t <- input$power_t
+      type_t <- input$type_t
+      alternative_t <- input$alternative_t
+      if(input$missing_t == 'n'){
+        n_t <- NULL
+      }
+      if(input$missing_t == 'd'){
+        d_t <- NULL
+      }
+      if(input$missing_t == 'sig.level'){
+        sig.level_t <- NULL
+      }
+      if(input$missing_t == 'power'){
+        power_t <- NULL
+      }
+      Result_t <- as.data.frame(unlist(pwr.t.test(n_t,
+                                                        d_t,
+                                                        sig.level_t,
+                                                        power_t,
+                                                        type_t,
+                                                        alternative_t)))
+      names(Result_t) <- "Result"
+      Result_t
+    }
+  )
+)
+
+################################################################################
+# Two samples (different sizes) t-tests of means ###############################
+################################################################################
+conditionalPanel(condition = "input.pwr_test == 'pwr.t2n.test'",
+  sidebarPanel(
+    radioButtons("missing_t2n", "Looking to determine:",
+                 choices = c("n1", "n2", "d", "sig.level", "power"),
+                 inline = TRUE),
+    radioButtons("alternative_t2n", "Alternative Hypothesis:",
+                 choices = c("two.sided", "greater", "less"),
+                 inline = TRUE),
+    conditionalPanel(
+      condition = "input.missing_t2n != 'n1'",
+      sliderInput("n1_t2n",
+                  "Number of observations in the first sample (n1)",
+                  1,10000,100)
+    ),
+    conditionalPanel(
+      condition = "input.missing_t2n != 'n2'",
+      sliderInput("n2_t2n",
+                  "Number of observations in the second sample (n2)",
+                  1,10000,100)
+    ),
+    conditionalPanel(
+      condition = "input.missing_t2n != 'd'",
+      sliderInput("d_t2n",
+                  "Effect size (d)",
+                  0,1,0.8)
+    ),
+    conditionalPanel(
+      condition = "input.missing_t2n != 'sig.level'",
+      sliderInput("sig.level_t2n",
+                  "Significance level (Type I error probability)",
+                  0,1,0.05)
+    ),
+    conditionalPanel(
+      condition = "input.missing_t2n != 'power'",
+      sliderInput("power_t2n",
+                  "Power of test (1 minus Type II error probability)",
+                  0,1,0.9)
+    )
+  ),
+        
+  renderTable(
+    if(length(input$missing_t2n)!=0){
+      n1_t2n <- input$n1_t2n
+      n2_t2n <- input$n2_t2n
+      d_t2n <- input$d_t2n
+      sig.level_t2n <- input$sig.level_t2n
+      power_t2n <- input$power_t2n
+      alternative_t2n <- input$alternative_t2n
+      if(input$missing_t2n == 'n1'){
+        n1_t2n <- NULL
+      }
+      if(input$missing_t2n == 'n2'){
+        n2_t2n <- NULL
+      }
+      if(input$missing_t2n == 'd'){
+        d_t2n <- NULL
+      }
+      if(input$missing_t2n == 'sig.level'){
+        sig.level_t2n <- NULL
+      }
+      if(input$missing_t2n == 'power'){
+        power_t2n <- NULL
+      }
+      Result_t2n <- as.data.frame(unlist(pwr.t2n.test(n1_t2n,
+                                                      n2_t2n,
+                                                      d_t2n,
+                                                      sig.level_t2n,
+                                                      power_t2n,
+                                                      alternative_t2n)))
+      names(Result_t2n) <- "Result"
+      Result_t2n
+    }
+  )
+)
+```
+
+
+<style>
+* { 
+	margin: 0; 
+	padding: 0; 
+}
+body { 
+	font: 14px/1.4 Georgia, Serif; 
+}
+#page-wrap {
+	margin: 50px;
+}
+p {
+	margin: 20px 0; 
+}
+
+	/* 
+	Generic Styling, for Desktops/Laptops 
+	*/
+	table { 
+		width:70%; 
+    margin-left:15%; 
+    margin-right:15%;
+		border-collapse: collapse; 
+	}
+	/* Zebra striping */
+	tr:nth-of-type(odd) { 
+		background: #eee; 
+	}
+	th { 
+		background: #333; 
+		color: white; 
+		font-weight: bold; 
+	}
+	td, th { 
+		padding: 6px; 
+		border: 1px solid #ccc; 
+		text-align: left; 
+	}
+</style>
+
