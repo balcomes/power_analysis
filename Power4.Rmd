@@ -1,9 +1,15 @@
 ---
-title: "Power and Sample Size Determination"
+title: "Sample Size Determination and Power Analysis"
 author: "Shawn Balcome"
 date: "July 22, 2015"
-output: slidy_presentation
+output:
+  slidy_presentation:
+    fig_width: 7
+    fig_height: 6
+    css: ./www/css/style.css
 runtime: shiny
+resource_files:
+- www/css/style.css
 ---
 
 ```{r global_options, include=FALSE}
@@ -15,107 +21,151 @@ knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
 library("knitr")
 library("xtable")
 library("pander")
+library("pwr")
 ```
 
 ## Slides
-These slides are hosted at:
+- These slides are hosted at:
 
-https://balcomes.shinyapps.io/power_analysis
+    https://balcomes.shinyapps.io/power_analysis
 
-The source is available at:
+- The markdown code for these slides are available at:
 
+    https://github.com/balcomes/power_analysis
 
+## R {#RStudioLogo}
+- Programming language useful for Statistics and Plotting
 
-## Review
-- Null Hypothesis:  No relationship between, default assumption
+- Has a number of packages/libraries catering to many different fields 
 
-- Type 1 Error:  False Positive, falsely reject true $H_0$
+- Excellent IDE for R:
+    - RStudio:  https://www.rstudio.com/
+    
+<img src="https://cran.r-project.org/Rlogo.jpg" height="76px" width="100px" />
 
-- Type 2 Error:  False Negative, fail to reject false $H_0$
+<img src="https://www.rstudio.com/wp-content/uploads/2014/07/RStudio-Logo-Blue-Gradient.png" height="70px" width="200px" />
+
+## Many Relevant Alternative R Packages
+- base R:  power.t.test(), power.prop.test(), power.anova.test()
+- TrialSize:  http://cran.r-project.org/web/packages/TrialSize/index.html
+- powerAnalysis:  https://cran.r-project.org/web/packages/powerAnalysis/index.html
+- pwr:  https://cran.r-project.org/web/packages/pwr/index.html
 
 ----
+
 ```{r, results="asis", echo=FALSE}
 m <- matrix(c("Type I error", "Correct decision", "Correct decision", "Type II error"),byrow=TRUE,nrow=2)
 colnames(m) <- c("$H_0$ is True", "$H_0$ is False")
 rownames(m) <- c("Reject $H_0$", "Do not Reject $H_0$")
-#kable(as.data.frame(m), format = "markdown")
 pandoc.table(as.data.frame(m), format = "rmarkdown")
 ```
 
-## Cohen
-- significance criterion (a)
-- the sample size (N)
-- population effect size (ES)
+- Null Hypothesis ($H_0$):
 
+    - Default assumption
+    - No relationship between measured phenomenon
+    - Sampled observations are pure chance
+    
+- Alternative Hypothesis ($H_a$):
+
+    - Rival hypothesis set to reject and replace $H_0$
+    
+- Type I Error:  False Positive, falsely reject true $H_0$
+
+    - Probability of Type I Error often denoted by $\alpha$
+    
+- Type II Error:  False Negative, fail to reject false $H_0$
+
+    - Probability of Type II Error often denoted by $\beta$
+    
 ## Need to consider
-- Significance Level = P(Type I error) = probability of finding an effect that is not there
-- Power = 1 - P(Type II error) = probability of finding an effect that is there
-Power: Probability that H0 will be rejected when it is false
-- Effect Size
-- Sample Size
+- Sample Size: Number of subjects in a group 
+- Significance Level: P(Type I error) = probability of finding an effect that is not there
+- Power: 1 - P(Type II error) = probability of finding an effect that is there
+    - (Probability that $H_0$ will be rejected when it is false)
+- Effect Size: Magnitude of the difference between two groups
 
-## Effect Size
-$d=\frac{M_{group1}-M_{group2}}{SD_{pooled}}$
+## Effect Size and Cohen's d
+- Cohen's d for t-tests
+
+$d=\frac{{M_{group1}-M_{group2}}}{SD_{pooled}}$
 
 $SD_{pooled} = \sqrt{\frac{SD^2_{group1}+SD^2_{group2}}{2}}$
 
-## Another
-- Confidence Level
-- Confidence Interval
-- Population
-- Sample Size
+If group sizes are different use $SD_{control}$ instead of $SD_{pooled}$ (Glass's $\Delta$)
 
-##R
-Programming language useful for Statistics and Plotting
+<center><HR WIDTH="90%" COLOR="#6699FF" SIZE="6"></center>
 
-Has a number of packages/libraries catering to many different fields 
+There are also ES formulas for
 
-Excellent IDE for R
-RStudio:  https://www.rstudio.com/
+- ANOVA
+- Correlations
+- Linear Models
+- Tests of Proportions
+- Chi-square Tests
 
-##pwd
-```{r, eval=FALSE, echo=TRUE}
-install.packages("pwr")
-library("pwr")
+## Web Visualization
+- http://powerandsamplesize.com
+
+- http://rpsychologist.com/d3/NHST/
+
+## Effect Size Table
+```{r, results="asis", echo=FALSE}
+ces <- c()
+for(i in c("p", "t", "r", "anov", "chisq", "f2")){
+  for(j in c("small", "medium", "large")){
+    ces <- c(ces,cohen.ES(i,j)$effect.size)
+  }
+}
+df <- as.data.frame(matrix(ces,nrow=6,byrow=TRUE))
+names(df) <- c("small", "medium", "large")
+rownames(df) <- c("p", "t", "r", "anov", "chisq", "f2")
+pandoc.table(as.data.frame(df), format = "rmarkdown")
 ```
 
-##pwd Table {.smaller}
+##pwr:  Table of Main Functions {.smaller}
 ```{r, results="asis", echo=FALSE}
 df <- as.data.frame(matrix(c("pwr.2p.test", "two proportions (equal n)", "pwr.2p2n.test", "two proportions (unequal n)", "pwr.anova.test", "balanced one way ANOVA", "pwr.chisq.test",	"chi-square test", "pwr.f2.test",	"general linear model", "pwr.p.test", "proportion (one sample)", "pwr.r.test",	"correlation", "pwr.t.test",	"t-tests (one sample, 2 sample, paired)", "pwr.t2n.test",	"t-test (two samples with unequal n)"),byrow=TRUE,nrow=9))
 names(df) <- c("function",	"power calculations for")
 pandoc.table((df), format = "rmarkdown")
 ```
 
-## Alternative R Packages
-- base
-- TrialSize:  http://cran.r-project.org/web/packages/TrialSize/index.html
-
-## pwr Demo
-```{r, results="asis", echo=TRUE}
-library(pwr)
+##pwr:  Table of Helper Functions {.smaller}
+```{r, results="asis", echo=FALSE}
+df <- as.data.frame(matrix(c("cohen.ES", "Conventional effects size", "ES.h",	"Effect size calculation for proportions", "ES.w1",	"Effect size calculation in the chi-squared test for goodness of fit", "ES.w2", "Effect size calculation in the chi-squared test for association"),byrow=TRUE,nrow=4))
+names(df) <- c("function",	"power calculations for")
+pandoc.table((df), format = "rmarkdown")
 ```
+
+## pwr: Demo
+http://www.statmethods.net/stats/power.html
+
+```{r, eval=FALSE, echo=TRUE}
+install.packages("pwr")
+library("pwr")
+help(package="pwr")
+```
+
 For a one-way ANOVA comparing 5 groups, calculate the sample size needed in each group to obtain a power of 0.80, when the effect size is moderate (0.25) and a significance level of 0.05 is employed.
 ```{r, results="asis", echo=TRUE}
 pwr.anova.test(k=5,f=.25,sig.level=.05,power=.8)
 ```
 
-## pwr Demo Continued
+## pwr: Demo Continued
 What is the power of a one-tailed t-test, with a significance level of 0.01, 25 people in each group, and an effect size equal to 0.75?
 ```{r, results="asis", echo=TRUE}
 pwr.t.test(n=25,d=0.75,sig.level=.01,alternative="greater")
 ```
 
-## pwr Demo Continued
+## pwr: Demo Continued
 Using a two-tailed test proportions, and assuming a significance level of 0.01 and a common sample size of 30 for each proportion, what effect size can be detected with a power of .75? 
 ```{r, results="asis", echo=TRUE}
 pwr.2p.test(n=30,sig.level=0.01,power=0.75)
 ```
 
-##References {.smaller}
-J. Cohen, Statistical Power Analysis for the Behavioral Sciences, 2nd ed. (Erlbaum, Hillsdale, NJ, 1988).
-
 ## {.smaller}
 ```{r, echo = FALSE}
+tags$link(rel="stylesheet", type="text/css", href="css/myStyle.css")
 selectInput("pwr_test",
              "Power calculation for:",
              choices = c("two proportions (same sample sizes)" = "pwr.2p.test",
@@ -144,7 +194,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.2p.test'",
       condition = "input.missing != 'h'",
       sliderInput("h",
                   "Effect Size (h)",
-                  0,1,0.8)
+                  -1,1,0.50,0.01)
     ),
     conditionalPanel(
       condition = "input.missing != 'n'",
@@ -162,7 +212,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.2p.test'",
       condition = "input.missing != 'power'",
       sliderInput("power",
                   "Power of test (1 minus Type II error probability)",
-                  0,1,0.9)
+                  0,1,0.80)
     )
   ),
         
@@ -211,7 +261,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.2p2n.test'",
       condition = "input.missing_2p2n != 'h'",
       sliderInput("h_2p2n",
                   "Effect Size (h)",
-                  0,1,0.8)
+                  -1,1,0.50,0.01)
     ),
     conditionalPanel(
       condition = "input.missing_2p2n != 'n1'",
@@ -235,7 +285,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.2p2n.test'",
       condition = "input.missing_2p2n != 'power'",
       sliderInput("power_2p2n",
                   "Power of test (1 minus Type II error probability)",
-                  0,1,0.9)
+                  0,1,0.80)
     )
   ),
         
@@ -298,7 +348,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.anova.test'",
       condition = "input.missing_anova != 'f'",
       sliderInput("f_anova",
                   "Effect size (f)",
-                  0,1,0.80)
+                  0,1,0.50,0.01)
     ),
     conditionalPanel(
       condition = "input.missing_anova != 'sig.level'",
@@ -310,7 +360,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.anova.test'",
       condition = "input.missing_anova != 'power'",
       sliderInput("power_anova",
                   "Power of test (1 minus Type II error probability)",
-                  0,1,0.9)
+                  0,1,0.80)
     )
   ),
         
@@ -359,7 +409,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.chisq.test'",
       condition = "input.missing_chisq != 'w'",
       sliderInput("w_chisq",
                   "Effect size (w)",
-                  0,1,0.80)
+                  0,1,0.50,0.01)
     ),
     conditionalPanel(
       condition = "input.missing_chisq != 'N'",
@@ -383,7 +433,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.chisq.test'",
       condition = "input.missing_chisq != 'power'",
       sliderInput("power_chisq",
                   "Power of test (1 minus Type II error probability)",
-                  0,1,0.9)
+                  0,1,0.80)
     )
   ),
         
@@ -444,7 +494,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.f2.test'",
       condition = "input.missing_f2 != 'f2'",
       sliderInput("f2_f2",
                   "Effect size (f2)",
-                  0,1,0.80)
+                  0,1,0.50,0.01)
     ),
     conditionalPanel(
       condition = "input.missing_f2 != 'sig.level'",
@@ -456,7 +506,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.f2.test'",
       condition = "input.missing_f2 != 'power'",
       sliderInput("power_f2",
                   "Power of test (1 minus Type II error probability)",
-                  0,1,0.9)
+                  0,1,0.80)
     )
   ),
         
@@ -508,7 +558,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.norm.test'",
       condition = "input.missing_norm != 'd'",
       sliderInput("d_norm",
                   "Effect Size d=mu-mu0 (d)",
-                  0,1,0.8)
+                  -1,1,0.50,0.01)
     ),
     conditionalPanel(
       condition = "input.missing_norm != 'n'",
@@ -526,7 +576,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.norm.test'",
       condition = "input.missing_norm != 'power'",
       sliderInput("power_norm",
                   "Power of test (1 minus Type II error probability)",
-                  0,1,0.9)
+                  0,1,0.80)
     )
   ),
         
@@ -575,7 +625,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.p.test'",
       condition = "input.missing_p != 'h'",
       sliderInput("h_p",
                   "Effect Size (h)",
-                  0,1,0.8)
+                  -1,1,0.50,0.01)
     ),
     conditionalPanel(
       condition = "input.missing_p != 'n'",
@@ -593,7 +643,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.p.test'",
       condition = "input.missing_p != 'power'",
       sliderInput("power_p",
                   "Power of test (1 minus Type II error probability)",
-                  0,1,0.9)
+                  0,1,0.80)
     )
   ),
         
@@ -660,7 +710,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.r.test'",
       condition = "input.missing_r != 'power'",
       sliderInput("power_r",
                   "Power of test (1 minus Type II error probability)",
-                  0,1,0.9)
+                  0,1,0.80)
     )
   ),
         
@@ -718,7 +768,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.t.test'",
       condition = "input.missing_t != 'd'",
       sliderInput("d_t",
                   "Effect size (d)",
-                  0,1,0.8)
+                  -1,1,0.50,0.01)
     ),
     conditionalPanel(
       condition = "input.missing_t != 'sig.level'",
@@ -730,7 +780,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.t.test'",
       condition = "input.missing_t != 'power'",
       sliderInput("power_t",
                   "Power of test (1 minus Type II error probability)",
-                  0,1,0.9)
+                  0,1,0.80)
     )
   ),
         
@@ -793,7 +843,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.t2n.test'",
       condition = "input.missing_t2n != 'd'",
       sliderInput("d_t2n",
                   "Effect size (d)",
-                  0,1,0.8)
+                  -1,1,0.50,0.01)
     ),
     conditionalPanel(
       condition = "input.missing_t2n != 'sig.level'",
@@ -805,7 +855,7 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.t2n.test'",
       condition = "input.missing_t2n != 'power'",
       sliderInput("power_t2n",
                   "Power of test (1 minus Type II error probability)",
-                  0,1,0.9)
+                  0,1,0.80)
     )
   ),
         
@@ -845,44 +895,15 @@ conditionalPanel(condition = "input.pwr_test == 'pwr.t2n.test'",
 )
 ```
 
+##References {.smaller}
+J. Cohen, Statistical Power Analysis for the Behavioral Sciences, 2nd ed. (Erlbaum, Hillsdale, NJ, 1988).
 
-<style>
-* { 
-	margin: 0; 
-	padding: 0; 
-}
-body { 
-	font: 14px/1.4 Georgia, Serif; 
-}
-#page-wrap {
-	margin: 50px;
-}
-p {
-	margin: 20px 0; 
-}
+Glass, G. V, McGaw, B., & Smith, M. L. (1981). Meta-analysis in social
+research. Beverly Hills, CA: Sage
 
-	/* 
-	Generic Styling, for Desktops/Laptops 
-	*/
-	table { 
-		width:70%; 
-    margin-left:15%; 
-    margin-right:15%;
-		border-collapse: collapse; 
-	}
-	/* Zebra striping */
-	tr:nth-of-type(odd) { 
-		background: #eee; 
-	}
-	th { 
-		background: #333; 
-		color: white; 
-		font-weight: bold; 
-	}
-	td, th { 
-		padding: 6px; 
-		border: 1px solid #ccc; 
-		text-align: left; 
-	}
-</style>
+Power and Sample Size. Accessed July 21, 2015. http://powerandsamplesize.com/.
+
+Kabacoff, Robert. "Quick-R." : Power Analysis. Accessed July 21, 2015. http://www.statmethods.net/stats/power.html.
+
+"Understanding Statistical Power and Significance Testing." - an Interactive Visualization. Accessed July 21, 2015. http://rpsychologist.com/d3/NHST/.
 
